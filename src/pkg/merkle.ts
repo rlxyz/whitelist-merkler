@@ -12,52 +12,62 @@ type WhitelistRecipient = {
   value: string;
 };
 
+export type Merklized = {
+  root: string;
+  tree: MerkleTree
+}
+
+/**
+ * Generate Merkle Tree leaf from address and value
+ * @param {string} address of whitelist claimee
+ * @param {string} value of whitelist tokens to claimee
+ * @returns {Buffer} Merkle Tree node
+ */
+const generateLeaf = (address: string, value: string): Buffer => {
+  return Buffer.from(
+    // Hash in appropriate Merkle format
+    solidityKeccak256(["address", "uint256"], [address, value]).slice(2),
+    "hex"
+  );
+}
+
 export default class Merkler {
   // whitelist recipients
   recipients: WhitelistRecipient[] = [];
   outputPath: string;
+  shouldLog: any;
 
   /**
    * Setup generator
    * @param {number} decimals of token
    * @param {Record<string, number>} whitelist address to token claim mapping
    */
-  constructor(whitelist: Record<string, number>, outputPath: string) {
+  constructor(whitelist: Record<string, number>, outputPath: string, shouldLog: boolean = false) {
     // For each whitelist entry
     for (const [address, tokens] of Object.entries(whitelist)) {
       // Push:
       this.recipients.push({
-        // Checksum address
         address: getAddress(address),
-        // Scaled number of tokens claimable by recipient
-        value: parseUnits(tokens.toString()).toString()
+        value: tokens.toString()
       });
     }
     this.outputPath = outputPath;
+    this.shouldLog = shouldLog
   }
 
-  /**
-   * Generate Merkle Tree leaf from address and value
-   * @param {string} address of whitelist claimee
-   * @param {string} value of whitelist tokens to claimee
-   * @returns {Buffer} Merkle Tree node
-   */
-  generateLeaf(address: string, value: string): Buffer {
-    return Buffer.from(
-      // Hash in appropriate Merkle format
-      solidityKeccak256(["address", "uint256"], [address, value]).slice(2),
-      "hex"
-    );
+  log(message: string): void {
+    if (this.shouldLog)
+      logger.info(message);
   }
 
-  async process(): Promise<void> {
-    logger.info("Generating Merkle tree.");
+  async process(save: boolean): Promise<Merklized> {
+    this.log("Generating Merkle tree.");
 
     // Generate merkle tree
     const merkleTree = new MerkleTree(
       // Generate leafs
       this.recipients.map(({ address, value }) =>
-        this.generateLeaf(address, value)
+        generateLeaf(address, value)
       ),
       // Hashing function
       keccak256,
@@ -66,18 +76,25 @@ export default class Merkler {
 
     // Collect and log merkle root
     const merkleRoot: string = merkleTree.getHexRoot();
-    logger.info(`Generated Merkle root: ${merkleRoot}`);
+    this.log(`Generated Merkle root: ${merkleRoot}`);
 
-    // Collect and save merkle tree + root
-    await fs.writeFileSync(
-      // Output to merkle.json
-      this.outputPath,
-      // Root + full tree
-      JSON.stringify({
-        root: merkleRoot,
-        tree: merkleTree
-      })
-    );
-    logger.info("Generated merkle tree and root saved to Merkle.json.");
+    if (save) {
+      // Collect and save merkle tree + root
+      await fs.writeFileSync(
+        // Output to merkle.json
+        this.outputPath,
+        // Root + full tree
+        JSON.stringify({
+          root: merkleRoot,
+          tree: merkleTree
+        })
+      );
+      this.log("Generated merkle tree and root saved to Merkle.json.");
+    }
+
+    return {
+      root: merkleRoot,
+      tree: merkleTree
+    }
   }
 }

@@ -1,6 +1,6 @@
 import fs from "fs"; // Filesystem
 import path from "path"; // Path routing
-import Merkler from "./pkg/merkle"; // Generator
+import Merkler, { Merklized } from "./pkg/merkle"; // Generator
 import { logger } from "./pkg/logger"; // Logging
 
 /**
@@ -12,7 +12,7 @@ function throwErrorAndExit(error: string): void {
     process.exit(1);
 }
 
-const createWhitelistMerkleRoot = async (whitelistPath: string, outputPath: string) => {
+export const createJsonWhitelistMerkleRoot = async (whitelistPath: string, outputPath: string): Promise<Merklized> => {
     // Check if config exists
     if (!fs.existsSync(whitelistPath)) {
         throwErrorAndExit("Missing whitelist.json. Please add.");
@@ -31,8 +31,15 @@ const createWhitelistMerkleRoot = async (whitelistPath: string, outputPath: stri
     const whitelist: Record<string, number> = configData.whitelist;
 
     // Initialize and call generator
-    const merkler = new Merkler(whitelist, outputPath);
-    await merkler.process();
+    const merkler = new Merkler(whitelist, outputPath, true);
+    return await merkler.process(true);
 };
 
-export default createWhitelistMerkleRoot;
+export const createRawWhitelistMerkleRoot = async (configData: any): Promise<Merklized> => {
+    // Collect config
+    const whitelist: Record<string, number> = configData.whitelist;
+
+    // Initialize and call generator
+    const merkler = new Merkler(whitelist, "");
+    return await merkler.process(false);
+};
