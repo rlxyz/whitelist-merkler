@@ -30,7 +30,7 @@
   "files": [
     "build/**/*"
   ],
-  "version": "0.0.0",
+  "version": "0.0.1",
   "publishConfig": {
     "access": "public"
   },
@@ -43,8 +43,7 @@
     "build": "node build/index.js",
     "prepare": "npm run build",
     "publish": "npm publish --access public",
-    "postpublish": "PACKAGE_VERSION=$(./scripts/package-version.sh) && git tag -ae v$PACKAGE_VERSION && git push --tags",
-    "version": "npm run format && git add ."
+    "postpublish": "PACKAGE_VERSION=$(./scripts/package-version.sh) && git tag -ae v$PACKAGE_VERSION && git push --tags"
   },
   "dependencies": {
     "ethers": "^5.5.2",
