@@ -3,14 +3,14 @@
 Example usage:
 ```javascript
 import path from "path"; // Path routing
-import createWhitelistMerkleRoot from "@rhapsodylabs/whitelist-merkler"; // Generator
+import { createJsonWhitelistMerkleRoot } from "@rhapsodylabs/whitelist-merkler"; // Generator
 
 // Config file path
-const whitelistPath: string = path.join(__dirname, "/whitelist.json");
-const outputPath: string = path.join(__dirname, "./whitelist-merkle.json");
+const whitelistPath: string = path.join(__dirname,"/storage/whitelist/whitelist.json");
+const outputPath: string = path.join(__dirname,  "./storage/whitelist/whitelist-merkle.json");
 
 (async () => {
-    await createWhitelistMerkleRoot(whitelistPath, outputPath)
+  await createJsonWhitelistMerkleRoot(whitelistPath, outputPath);
 })();
 ```
 
